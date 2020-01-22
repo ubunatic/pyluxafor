@@ -3,7 +3,7 @@ from subprocess import Popen, PIPE
 from contextlib import contextmanager
 
 from threading import Thread
-import time
+import time, os
 
 DBUS_KEY_LOGIN = "org.freedesktop.login1"
 DBUS_MONITOR_COMMAND = "gdbus monitor -y -d".split(" ")
@@ -30,8 +30,15 @@ class Login:
     def __init__(l):
         l.subscribers = []
 
+    def debug(l, *args):
+        if os.environ.get("DEBUG"):
+            print("DEBUG:", *args)
+
     def read_dbus_line(l, line):
-        if   "'IdleHint': <true>"    in line: l.state = Login.LOGGED_OFF
+        if "user" not in line:
+            # only listen to "user" events
+            return
+        elif "'IdleHint': <true>"    in line: l.state = Login.LOGGED_OFF
         elif "'IdleHint': <false>"   in line: l.state = Login.LOGGED_IN
         elif "'LockedHint': <true>"  in line: l.state = Login.LOGGED_OFF
         elif "'LockedHint': <false>" in line: l.state = Login.LOGGED_IN
@@ -39,7 +46,8 @@ class Login:
             # no callback or delay required if state is not changed
             return
 
-        print("line:", line, "state:", l.state)
+        l.debug("dbus line:", line, "derived state:", l.state)
+
         for cb in l.subscribers: cb(l.state)
         time.sleep(l.state_change_delay)
 
@@ -56,6 +64,9 @@ class Login:
         l.watcher = t = Thread(target=l.read_dbus)
         t.daemon = True
         t.start()
+        # join the watcher Thread shortly to allow startup
+        t.join(0.1)
+        l.debug("watcher Thread is up!")
         return l
 
     def join(l, timeout=None):

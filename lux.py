@@ -59,7 +59,6 @@ def main():
 
 def getch(): return str(sys.stdin.read(1))
 
-
 def on_change_login_state(lf, state):
     print("changed state:", state)
     if   state == Login.LOGGED_IN:  rgb = (0,   255,   0)
@@ -68,7 +67,8 @@ def on_change_login_state(lf, state):
     lf.set_colors(rgb, None)
 
 def main_loop(lf, login):
-    print("LUXAFOR Control started, press Q to quit")
+    usage()
+    print("LUXAFOR Control started, press Q to quit or H to show help.")
     rgb, pat, rep = (255, 0, 0), None, 1
     while True:
         login.join(0.1)  # join the login watcher Thread instead of sleeping here
@@ -77,7 +77,7 @@ def main_loop(lf, login):
         elif cmd in ("h", "H"): usage()
         elif cmd == "":   continue
         elif cmd == "x":  lf.off(); continue
-        elif cmd == "P":  rgb, pat, rep = None, LF.PATTERN_POLICE,      1
+        elif cmd == "P":  rgb, pat, rep = None, LF.PATTERN_POLICE,      3
         elif cmd == "R":  rgb, pat, rep = None, LF.PATTERN_RAINBOWWAVE, 5
         elif cmd == "w":  rgb, pat = (255, 255, 255), None
         elif cmd == "r":  rgb, pat = (255,   0,   0), None
